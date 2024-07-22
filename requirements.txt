@@ -1,0 +1,5 @@
+pyside2
+winotify
+loguru
+psutil
+pywin32

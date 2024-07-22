@@ -1,0 +1,6 @@
+https://versa-syahptr.github.io/winotify/docs/winotify.html
+tray注册表路径:计算机\HKEY_CURRENT_USER\Control Panel\NotifyIconSettings\
+
+系统电源管理事件:https://learn.microsoft.com/zh-cn/windows/win32/power/system-power-management-events
+https://stackoverflow.com/questions/48720924/python-3-detect-monitor-power-state-in-windows
+https://learn.microsoft.com/zh-cn/windows/win32/power/power-setting-guids?redirectedfrom=MSDN
