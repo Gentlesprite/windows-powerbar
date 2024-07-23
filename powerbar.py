@@ -7,9 +7,9 @@ import os
 import sys
 import psutil
 import win32com.client
-from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QApplication, QAction, QActionGroup, QPushButton
-from PySide2.QtCore import QThread, Signal, QTimer, QSize
+from PySide6.QtGui import QIcon, QAction, QActionGroup
+from PySide6.QtCore import QThread, Signal, QTimer, QSize
+from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 from winotify import Notification, audio
 import module
 from module import res_rc
@@ -30,7 +30,7 @@ class PowerMenu(QMenu):
     link_name = os.path.splitext(software_name)[0]
     shortcut_path = os.path.join(startup_dir, link_name + '.lnk')
     version = module.version
-    icon_path = os.path.join(SaveUserConfig.app_default_dir, 'powercfg.ico')
+    icon_path = os.path.join(SaveUserConfig.app_default_dir, 'powercfg.png')
     log_path = os.path.join(SaveUserConfig.app_default_dir, 'powerbar.log')
     setup_logger_config(log_path=log_path)
 
@@ -64,7 +64,8 @@ class PowerMenu(QMenu):
             logger.info(f'当前运行PID:{self.pid}')
             self.loadConfig()
         self.thread.start()  # 启动获取电源改变循环
-        self.updatePowerBoxState(CmdTask.getCurrentPlan(), force=True)
+        # ↓ ↓ ↓ 2.0 修复第一次初始化启动时重复执行问题 ↓ ↓ ↓
+        # self.updatePowerBoxState(CmdTask.getCurrentPlan(), force=True)
 
     def band(self):
         self.power_choice_actions.triggered.connect(self.updatePowerBoxState)
@@ -78,9 +79,7 @@ class PowerMenu(QMenu):
 
     def showPayDialog(self):
         image_pay: QIcon = QIcon(':pay.png')
-        pixmap_icon: QIcon = image_pay.pixmap(QSize(1504, 1000))
-        self.pay_dialog: ImageView = ImageView(pixmap_icon, QIcon(':powercfg.ico'))
-        self.pay_dialog.show()
+        self.pay_dialog: ImageView = ImageView(image_pay, QIcon(':powercfg.ico'), parent=self)
 
     def loadConfig(self, only_check=False):
         if isinstance(self.config_content_dict, dict):  # 配置必须为字典
@@ -236,7 +235,6 @@ class PowerMenu(QMenu):
     def updatePowerBoxState(self, data, force=False):
         inner = False
         self.thread.pause()
-        current_guid = CmdTask.getCurrentPlan()[1]
         if isinstance(data, QAction):
             inner = True
             self.thread.power_plan_changed.disconnect(self.updatePowerBoxState)
@@ -247,11 +245,11 @@ class PowerMenu(QMenu):
             name, guid = data
         else:
             return
+        current_guid = CmdTask.getCurrentPlan()[1]
         [i.setChecked(True) for i in self.power_choice_actions.actions() if force and i.text() == name]
         CmdTask.setPlan(name, guid) if guid != current_guid or force else 0
-        if force or inner:
-            self.icon.setToolTip(f'当前电源方案:{name}')
-            self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
+        self.icon.setToolTip(f'当前电源方案:{name}')
+        self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
         if inner:
             QTimer().singleShot(2000,
                                 lambda: self.thread.power_plan_changed.connect(self.updatePowerBoxState))
@@ -281,8 +279,8 @@ class PowerMenu(QMenu):
         icon_path = PowerMenu.icon_path
         if not os.path.exists(icon_path):
             logger.info(f'通知图标文件不存在,正在重新生成图标文件')
-            icon = QIcon(':powercfg.ico')
-            pixmap_icon = icon.pixmap(QSize(64, 64))
+            icon = QIcon(':powercfg.png')
+            pixmap_icon = icon.pixmap(QSize(256, 256))
             pixmap_icon.save(PowerMenu.icon_path)
         toast = Notification(app_id="电源计划",
                              title="电源计划调整" if not title else title,
@@ -355,12 +353,10 @@ class PowerEventTimer(QThread, PowerEventListener):
     def pause(self):
         logger.info('监听已暂停!')
         self.timer.stop()
-        # self.timer.timeout.disconnect(win32gui.PumpMessages())
 
     def restore(self):
         logger.info('监听已恢复!')
         self.timer.start(self.delay)
-        # self.timer.timeout.connect(win32gui.PumpMessages())
 
     def stop(self):
         self.timer.stop()
@@ -380,10 +376,11 @@ class PowerEventTimer(QThread, PowerEventListener):
 
 def run_menu():
     app = QApplication(sys.argv)
+    app.setStyle("Universal")
     menu = PowerMenu()
     menu.show()
-    app.exec_()
-    sys.exit(app.exec_())
+    app.exec()
+    sys.exit(app.exec())
 
 
 if __name__ == '__main__':

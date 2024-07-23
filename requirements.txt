@@ -1,6 +1,7 @@
-pyside2
+pyside6==6.4.2
 winotify
 loguru
 psutil
 pywin32
-Pillow
+comtypes
+pyinstaller

@@ -6,14 +6,14 @@
 """
 读取res资源文件中的内容转换为图片显示或生成文件路径
 """
-from PySide2.QtGui import QPixmap
-from PySide2.QtWidgets import QMainWindow, QLabel
-import PySide2
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QMainWindow, QLabel
+import PySide6
 
 
-# 处理QIcon对象将它显示在窗口上,相当于打开编译好的资源进行读取查看
+# 支持QPixmap对象的图片,传入时候转换即可
 class ImageView(QMainWindow):
-    def __init__(self, image: PySide2.QtGui.QIcon, title_icon: PySide2.QtGui.QPixmap.QIcon):
+    def __init__(self, image: PySide6.QtGui.QPixmap, title_icon: PySide6.QtGui.QIcon):
         super(ImageView, self).__init__()
         self.setWindowIcon(title_icon)
         self.setWindowTitle('窗口标题')
@@ -29,9 +29,9 @@ class ImageView(QMainWindow):
 iv = ImageView(image_icon='需要显示图片', title_icon='标题图片')
 
 
-# 也支持QPixmap对象的图片,传入时候转换即可
+# 处理QIcon对象将它显示在窗口上,相当于打开编译好的资源进行读取查看
 class ImageView(QMainWindow):
-    def __init__(self, image: PySide2.QtGui.QPixmap, title_icon: PySide2.QtGui.QPixmap.QIcon):
+    def __init__(self, image: PySide6.QtGui.QIcon, title_icon: PySide6.QtGui.QPixmap.QIcon):
         super(ImageView, self).__init__()
         pixmap = QPixmap()
         pixmap.loadFromData(image)

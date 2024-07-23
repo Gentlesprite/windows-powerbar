@@ -9,9 +9,9 @@ https://blog.csdn.net/weixin_42579717/article/details/99319125
 """
 import base64
 import tempfile
-from PySide2.QtWidgets import QApplication, QPushButton
-from PySide2.QtGui import QPixmap
-from PySide2.QtCore import QSize
+from PySide6.QtWidgets import QApplication, QPushButton
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QSize
 
 # 首先将图片打印成二进制文件
 # with open(r"图片路径", "rb") as f:  # 用 rb 模式（二进制）打开文件

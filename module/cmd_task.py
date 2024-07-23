@@ -62,10 +62,3 @@ class CmdTask:
     def killPidToExit(running_pid):
         subprocess.run(['taskkill', '/f', '/im', str(running_pid)], creationflags=subprocess.CREATE_NO_WINDOW,
                        check=True)
-
-    @staticmethod
-    def openPicture(pic_path):
-        try:
-            subprocess.Popen(['start', pic_path], shell=True)
-        except Exception as e:
-            print(f"Error opening file: {e}")

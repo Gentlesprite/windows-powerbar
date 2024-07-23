@@ -3,3 +3,6 @@ venv/
 dist/
 .idea/
 build/
+*.spec
+Pipfile
+*.lock
