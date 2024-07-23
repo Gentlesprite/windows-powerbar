@@ -11,10 +11,10 @@
 </p>
 <p align="center">
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Python-3.8.1-blue.svg?color=00B16A" alt="Python 3.9.7"/>
+    <img src="https://img.shields.io/badge/Python-3.11.7-blue.svg?color=00B16A" alt="Python 3.11.7"/>
   </a>
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Pyside2-5.15.2.1%20-blue?color=00B16A" alt="Pyside2 5.15.2.1"/>
+    <img src="https://img.shields.io/badge/Pyside6-6.4.2%20-blue?color=00B16A" alt="Pyside6 6.4.2"/>
   </a>
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Platform-Windows%20-blue?color=00B16A" alt="Platform Windows"/>
@@ -41,7 +41,7 @@ B站视频展示:[点击跳转观看](https://www.bilibili.com/video/BV1oy411B7a
 
 # 联系作者:
   Telegram:@Gentlesprite
-  
+
   邮箱:Gentlesprites@outlook.com
 
 # 支持作者:
