@@ -43,8 +43,9 @@ class CmdTask:
         except Exception as e:
             logger.error(f'Error occurred:{e}')
         return ()
+
     @staticmethod
-    def setPlan(name,guid) -> None:
+    def setPlan(name, guid) -> None:
         """设定当前系统电源方案
         key:
             电源计划的别称
@@ -57,4 +58,14 @@ class CmdTask:
         # 设置用户选择的电源方案
         subprocess.run(['powercfg', '/S', guid], creationflags=subprocess.CREATE_NO_WINDOW)
 
+    @staticmethod
+    def killPidToExit(running_pid):
+        subprocess.run(['taskkill', '/f', '/im', str(running_pid)], creationflags=subprocess.CREATE_NO_WINDOW,
+                       check=True)
 
+    @staticmethod
+    def openPicture(pic_path):
+        try:
+            subprocess.Popen(['start', pic_path], shell=True)
+        except Exception as e:
+            print(f"Error opening file: {e}")

@@ -4,11 +4,14 @@
 # Time:2024/4/3 16:26
 # File:user_config
 import os
+
 import json
+import module
 from .cmd_task import CmdTask
 from loguru import logger
 from .audio_choice import AudioType
-
+from PySide2.QtWidgets import QMainWindow, QLabel
+from PySide2.QtGui import QIcon
 
 
 class SaveUserConfig:
@@ -160,4 +163,19 @@ class SaveUserConfig:
             return False
 
 
+class ImageView(QMainWindow):
+    def __init__(self, image: QIcon, title_icon: QIcon):
+        super(ImageView, self).__init__()
+        self.setWindowIcon(title_icon)
+        self.setWindowTitle(module.SOFTWARE_NAME)
+        self.label = QLabel(self)
+        self.label.setScaledContents(True)  # 让图片自适应 QLabel 大小
+        self.label.setPixmap(image)
+        self.setCentralWidget(self.label)  # 将 QLabel 设置为主窗口的中央部件
+        self.adjustSize()  # 调整窗口大小以适应图片大小
+        self.show()
 
+
+def setup_logger_config(log_path):
+    logger.add(sink=log_path, level='INFO', rotation='10 MB', retention='10 days', compression='zip', encoding='UTF-8',
+               enqueue=True)

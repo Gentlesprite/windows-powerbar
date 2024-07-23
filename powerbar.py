@@ -5,21 +5,19 @@
 # File:powerbar.py
 import os
 import sys
-import win32com.client
 import psutil
-from PIL import Image
-from io import BytesIO
+import win32com.client
 from PySide2.QtGui import QIcon
-from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QAction, QActionGroup
-from PySide2.QtWidgets import QApplication
-from PySide2.QtCore import QThread, Signal, QTimer, QByteArray, QBuffer, QIODevice
+from PySide2.QtWidgets import QSystemTrayIcon, QMenu, QApplication, QAction, QActionGroup, QPushButton
+from PySide2.QtCore import QThread, Signal, QTimer, QSize
 from winotify import Notification, audio
+import module
 from module import res_rc
 from loguru import logger
-from module.power_event_loop import PowerEventListener, POWERBROADCAST_SETTING, win32gui, win32con, cast, POINTER
 from module.cmd_task import CmdTask
-from module.user_config import SaveUserConfig
 from module.audio_choice import AudioType
+from module.user_config import SaveUserConfig, ImageView, setup_logger_config
+from module.power_event_loop import PowerEventListener, POWERBROADCAST_SETTING, win32gui, win32con, cast, POINTER
 
 
 class PowerMenu(QMenu):
@@ -31,7 +29,11 @@ class PowerMenu(QMenu):
     target = os.path.join(software_path, software_name)
     link_name = os.path.splitext(software_name)[0]
     shortcut_path = os.path.join(startup_dir, link_name + '.lnk')
-    version = '1.2.0.0'
+    version = module.version
+    icon_path = os.path.join(SaveUserConfig.app_default_dir, 'powercfg.ico')
+    log_path = os.path.join(SaveUserConfig.app_default_dir, 'powerbar.log')
+    setup_logger_config(log_path=log_path)
+
     def __init__(self):
         super(PowerMenu, self).__init__()
         self.config = SaveUserConfig()
@@ -53,6 +55,7 @@ class PowerMenu(QMenu):
         self.voice_box: dict = {}  # 存储提示音选项的k0类型v1控件地址
         self.initMenu()  # 初始化操作
         self.band()  # 绑定按键
+        self.pay_dialog = ImageView
 
     def initMenu(self):
         self.power_cfg: dict = CmdTask.getPowerConfig()  # 获取所有电源选项
@@ -73,19 +76,11 @@ class PowerMenu(QMenu):
         self.startup.triggered.connect(self.startWithWindows)
         self.thread.power_plan_changed.connect(self.updatePowerBoxState)
 
-    @staticmethod
-    def showPayDialog():
-        pay_image = QIcon(':pay.png')
-        pixmap = pay_image.pixmap(pay_image.availableSizes()[0])  # 获取 QIcon 的原始大小
-        # 将 QPixmap 转换为字节数组
-        byte_array = QByteArray()
-        buffer = QBuffer(byte_array)
-        buffer.open(QIODevice.WriteOnly)
-        pixmap.save(buffer, 'PNG')  # 将 QPixmap 以 PNG 格式保存到缓冲区
-        buffer.close()
-        # 将字节流转换为 PIL Image
-        image = Image.open(BytesIO(byte_array))
-        image.show()
+    def showPayDialog(self):
+        image_pay: QIcon = QIcon(':pay.png')
+        pixmap_icon: QIcon = image_pay.pixmap(QSize(1504, 1000))
+        self.pay_dialog: ImageView = ImageView(pixmap_icon, QIcon(':powercfg.ico'))
+        self.pay_dialog.show()
 
     def loadConfig(self, only_check=False):
         if isinstance(self.config_content_dict, dict):  # 配置必须为字典
@@ -165,7 +160,7 @@ class PowerMenu(QMenu):
         self.menu.addAction(self.is_notice_button)
         self.is_notice_button.setData(self.is_notice_button)
         self.menu.addSeparator()
-        self.pay_to_writer = QAction('捐赠作者:我不是盘神', self, checkable=False, triggered=PowerMenu.showPayDialog)
+        self.pay_to_writer = QAction('捐赠作者:我不是盘神', self, checkable=False, triggered=self.showPayDialog)
         self.menu.addAction(self.pay_to_writer)
         self.menu.addSeparator()
         self.quit_button = QAction('退出', self)
@@ -239,12 +234,29 @@ class PowerMenu(QMenu):
         return self.pid, self.notice, self.dtype, self.start_with_windows
 
     def updatePowerBoxState(self, data, force=False):
+        inner = False
+        self.thread.pause()
         current_guid = CmdTask.getCurrentPlan()[1]
-        name, guid = data.data() if isinstance(data, QAction) else data
+        if isinstance(data, QAction):
+            inner = True
+            self.thread.power_plan_changed.disconnect(self.updatePowerBoxState)
+            # 内部触发,外部触发控件已暂时解绑
+            name, guid = data.data()
+        elif isinstance(data, tuple):
+            force = True
+            name, guid = data
+        else:
+            return
         [i.setChecked(True) for i in self.power_choice_actions.actions() if force and i.text() == name]
         CmdTask.setPlan(name, guid) if guid != current_guid or force else 0
-        self.icon.setToolTip(f'当前电源方案:{name}')
-        self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
+        if force or inner:
+            self.icon.setToolTip(f'当前电源方案:{name}')
+            self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
+        if inner:
+            QTimer().singleShot(2000,
+                                lambda: self.thread.power_plan_changed.connect(self.updatePowerBoxState))
+        QTimer().singleShot(2000,
+                            lambda: self.thread.restore())
 
     def updateVoiceBoxState(self, data):
         if data == self.is_notice_button.data():
@@ -266,10 +278,16 @@ class PowerMenu(QMenu):
             self.config.updateConfig(config_dict=self.config_content_dict, dtype=self.dtype, notice=self.notice)
 
     def powerChangeNotice(self, change_plan_content, title=False):
+        icon_path = PowerMenu.icon_path
+        if not os.path.exists(icon_path):
+            logger.info(f'通知图标文件不存在,正在重新生成图标文件')
+            icon = QIcon(':powercfg.ico')
+            pixmap_icon = icon.pixmap(QSize(64, 64))
+            pixmap_icon.save(PowerMenu.icon_path)
         toast = Notification(app_id="电源计划",
                              title="电源计划调整" if not title else title,
                              msg=change_plan_content,
-                             icon=r'D:\files\Documents\study\python\Program\windows_power_manager\img\powercfg.ico',
+                             icon=icon_path,
                              duration='short')
         type_attribute: dict = {AudioType.Default: audio.Default,
                                 AudioType.IM: audio.IM,
@@ -287,7 +305,11 @@ class PowerMenu(QMenu):
         self.config.updateConfig(config_dict=self.config_content_dict, pid=pid, notice=notice, dtype=dtype,
                                  start_with_windows=startWithWindows)
         self.thread.stop()
-        QApplication.quit()
+        try:
+            CmdTask.killPidToExit(_pid)
+        except Exception as e:
+            logger.error(e)
+            exit()
 
     @staticmethod
     def startPwoerConfigPanel(reason):
@@ -320,20 +342,31 @@ class PowerEventTimer(QThread, PowerEventListener):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.running = False
+        self.delay = 1
+        self.timer = QTimer()
 
     def run(self):
         self.running = True
-        hwnd = self.create_window()
-        self.register_power_setting_notification(hwnd)
-        logger.info('已开启监听')
-        self.timer = QTimer()
+        self.register_power_setting_notification()
         self.timer.timeout.connect(win32gui.PumpMessages())
-        self.timer.start()
+        logger.info('监听已开启!')
+        self.timer.start(self.delay)
+
+    def pause(self):
+        logger.info('监听已暂停!')
+        self.timer.stop()
+        # self.timer.timeout.disconnect(win32gui.PumpMessages())
+
+    def restore(self):
+        logger.info('监听已恢复!')
+        self.timer.start(self.delay)
+        # self.timer.timeout.connect(win32gui.PumpMessages())
 
     def stop(self):
         self.timer.stop()
+        self.running = False
         self.quit()
-        logger.success('\n监听已退出')
+        logger.success('监听已退出')
 
     def handle_power_setting_change(self, hwnd, msg, wparam, lparam):
         if msg == win32con.WM_POWERBROADCAST and wparam == PowerEventListener.PBT_POWERSETTINGCHANGE:
@@ -349,6 +382,7 @@ def run_menu():
     app = QApplication(sys.argv)
     menu = PowerMenu()
     menu.show()
+    app.exec_()
     sys.exit(app.exec_())
 
 
@@ -359,9 +393,10 @@ if __name__ == '__main__':
         run_menu()
         logger.success('通过初始化配置或者正常退出打开')
     else:
+        # TODO:软件异常退出不保存pid=0时候会软件误判为多开导致打不开
         pid_lst: list = psutil.pids()
         if pid in pid_lst:
-            logger.success('软件已存在，不能多开')
+            logger.success('软件已存在,不能多开')
             logger.error(f'pid已经在:{pid}在列表{pid_lst.index(pid)}中')
             CmdTask.startPwoerConfigPanel()
         else:

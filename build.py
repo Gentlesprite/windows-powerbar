@@ -8,7 +8,7 @@ import os
 import PyInstaller.__main__
 
 py_name = "powerbar.py"
-icon_path = r"D:\files\Documents\study\python\Program\windows_power_manager\img\powercfg.ico"
+icon_path = r"img\powercfg.ico"
 upx_dir = r"D:\env\upx\upx-4.2.3-win64"
 version_file = os.path.join(os.getcwd(), 'file_version_info.txt')
 
