@@ -243,8 +243,8 @@ class PowerMenu(QMenu):
         CmdTask.setPlan(name, guid) if guid != current_guid or force else 0
         self.icon.setToolTip(f'当前电源方案:{name}')
         self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
+        # 缩减响应时间 v2.0-noad/v2.0 ↓ ↓ ↓
         if inner:
-            # 缩减响应时间 v2.0-noad v2.1 ↓ ↓ ↓
             QTimer().singleShot(200,
                                 lambda: self.thread.power_plan_changed.connect(self.updatePowerBoxState))
         QTimer().singleShot(200,
