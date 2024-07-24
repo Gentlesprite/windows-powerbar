@@ -5,13 +5,9 @@
 # File:user_config
 import os
 import json
-import module
 from loguru import logger
 from .cmd_task import CmdTask
 from .audio_choice import AudioType
-from PySide6.QtGui import QGuiApplication, Qt
-from PySide6.QtWidgets import QMainWindow, QLabel
-from PySide6.QtGui import QIcon
 
 
 class SaveUserConfig:
@@ -161,47 +157,6 @@ class SaveUserConfig:
                 return False
         except:
             return False
-
-
-"""
-class ImageView(QMainWindow):
-    def __init__(self, image: QIcon, title_icon: QIcon, parent=None):
-        super(ImageView, self).__init__(parent)
-        self.setWindowIcon(title_icon)
-        self.setWindowTitle(module.SOFTWARE_NAME)
-        self.label = QLabel(self)
-        screen_geometry = QGuiApplication.primaryScreen().availableGeometry()
-        w, h = screen_geometry.width(), screen_geometry.height()
-        self.resize(w * 1240 / 1920, h * 500 / 1080)
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
-
-        self.label.setPixmap(image)
-
-        self.show()
-        #parent.adjustSize()  # 调整窗口大小以适应图片大小
-"""
-
-
-class ImageView(QMainWindow):
-    def __init__(self, image: QIcon, title_icon: QIcon, parent=None):
-        super(ImageView, self).__init__(parent)
-        flags = Qt.WindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowCloseButtonHint)
-        self.setWindowFlags(flags)
-        self.setWindowIcon(title_icon)
-        self.setWindowTitle(module.SOFTWARE_NAME)  # Assuming module.SOFTWARE_NAME is defined elsewhere
-        # 获取屏幕尺寸
-        screen_geometry = QGuiApplication.primaryScreen().availableGeometry()
-        w, h = screen_geometry.width(), screen_geometry.height()
-        # 创建 QLabel 显示图片
-        self.label = QLabel(self)
-        self.label.setPixmap(image.pixmap(w * 1240 / 1920, h * 500 / 1080))  # 使用正确大小的 QPixmap
-        self.label.adjustSize()  # 调整 QLabel 大小以适应内容
-        # 设置窗口大小并居中显示
-        self.resize(self.label.size())
-        # 禁止窗口拉伸
-        self.setFixedSize(self.size())
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
-        self.show()
 
 
 def setup_logger_config(log_path):

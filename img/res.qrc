@@ -2,6 +2,5 @@
   <qresource>
     <file>powercfg.ico</file>
     <file>powercfg.png</file>
-    <file>pay.png</file>
   </qresource>
 </RCC>
