@@ -156,6 +156,7 @@ class PowerMenu(QMenu):
         self.startup = QAction('开机启动', self, checkable=True)
         self.menu.addAction(self.startup)
         self.is_notice_button = QAction('通知', self, checkable=True)
+        self.menu.addSeparator()
         self.menu.addAction(self.is_notice_button)
         self.is_notice_button.setData(self.is_notice_button)
         self.menu.addSeparator()
@@ -250,10 +251,11 @@ class PowerMenu(QMenu):
         CmdTask.setPlan(name, guid) if guid != current_guid or force else 0
         self.icon.setToolTip(f'当前电源方案:{name}')
         self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
+        # 缩减响应时间 v2.0-noad/v2.0 ↓ ↓ ↓
         if inner:
-            QTimer().singleShot(2000,
+            QTimer().singleShot(200,
                                 lambda: self.thread.power_plan_changed.connect(self.updatePowerBoxState))
-        QTimer().singleShot(2000,
+        QTimer().singleShot(200,
                             lambda: self.thread.restore())
 
     def updateVoiceBoxState(self, data):
