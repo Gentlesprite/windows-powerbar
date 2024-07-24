@@ -151,6 +151,7 @@ class PowerMenu(QMenu):
         self.startup = QAction('开机启动', self, checkable=True)
         self.menu.addAction(self.startup)
         self.is_notice_button = QAction('通知', self, checkable=True)
+        self.menu.addSeparator()
         self.menu.addAction(self.is_notice_button)
         self.is_notice_button.setData(self.is_notice_button)
         self.menu.addSeparator()
