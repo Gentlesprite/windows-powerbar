@@ -15,7 +15,7 @@ from module import res_rc
 from loguru import logger
 from module.cmd_task import CmdTask
 from module.audio_choice import AudioType
-from module.user_config import SaveUserConfig, ImageView, setup_logger_config
+from module.user_config import SaveUserConfig, setup_logger_config
 from module.power_event_loop import PowerEventListener, POWERBROADCAST_SETTING, win32gui, win32con, cast, POINTER
 
 
@@ -54,7 +54,6 @@ class PowerMenu(QMenu):
         self.voice_box: dict = {}  # 存储提示音选项的k0类型v1控件地址
         self.initMenu()  # 初始化操作
         self.band()  # 绑定按键
-        self.pay_dialog = ImageView
 
     def initMenu(self):
         self.power_cfg: dict = CmdTask.getPowerConfig()  # 获取所有电源选项
@@ -73,10 +72,6 @@ class PowerMenu(QMenu):
             lambda: self.updateVoiceBoxState(data=self.is_notice_button.data()))
         self.startup.triggered.connect(self.startWithWindows)
         self.thread.power_plan_changed.connect(self.updatePowerBoxState)
-
-    def showPayDialog(self):
-        image_pay: QIcon = QIcon(':pay.png')
-        self.pay_dialog: ImageView = ImageView(image_pay, QIcon(':powercfg.ico'), parent=self)
 
     def loadConfig(self, only_check=False):
         if isinstance(self.config_content_dict, dict):  # 配置必须为字典
@@ -153,9 +148,6 @@ class PowerMenu(QMenu):
         self.menu.addSeparator()
         self.menu.addAction(self.is_notice_button)
         self.is_notice_button.setData(self.is_notice_button)
-        self.menu.addSeparator()
-        self.pay_to_writer = QAction('捐赠作者:我不是盘神', self, checkable=False, triggered=self.showPayDialog)
-        self.menu.addAction(self.pay_to_writer)
         self.menu.addSeparator()
         self.quit_button = QAction('退出', self)
         self.menu.addAction(self.quit_button)
