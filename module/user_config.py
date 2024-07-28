@@ -24,11 +24,11 @@ class SaveUserConfig:
 
     def __init__(self):
         self.current_plan = CmdTask.getCurrentPlan()[1]
-        self.key_num = 4  # 配置文件中键的个数
+        self.key_num = 3  # 配置文件中键的个数
         self.power_cfg = CmdTask.getPowerConfig()
         for i in self.power_cfg.items():
             if i[1] == self.current_plan:
-                logger.info(f'当前的电源计划为:{i[0]} GUID:{self.current_plan}')
+                logger.info(f'当前的电源计划为:{i[0]},GUID:{self.current_plan}。')
         try:
             self.config_path = self.getConfig(exist_ok=True)[1]
         except TypeError:
@@ -41,8 +41,7 @@ class SaveUserConfig:
         config = {
             "notice": True,
             "type": AudioType.Default.value,
-            "startWithWindows": False,
-            "pid": 0
+            "startWithWindows": False
         }
         return config
 
@@ -57,10 +56,10 @@ class SaveUserConfig:
             with open(save_path, 'r') as file:
                 return json.load(file)
         except FileNotFoundError:
-            logger.error(f"Config file not found at {save_path}")
+            logger.error(f'配置文件"{save_path}"被意外丢失!')
             raise
         except json.JSONDecodeError:
-            logger.error(f"Error decoding JSON from {save_path}")
+            logger.error(f'从"{save_path}"解码JSON时出错!')
             raise
 
     def genConfigTemplate(self, save_path):
@@ -68,7 +67,7 @@ class SaveUserConfig:
             with open(save_path, 'w') as file:
                 json.dump(self.configTemplate(), file, indent=4)
         except FileNotFoundError:
-            logger.error(f"Error creating config template at {save_path}")
+            logger.error(f'在"{save_path}"创建配置模板时出错!')
             raise
 
     def getConfig(self, exist_ok=False):  # 查
@@ -79,6 +78,7 @@ class SaveUserConfig:
         except FileNotFoundError:
             save_path = SaveUserConfig.temp_config_path
             config = self.readConfig(save_path=save_path)
+            logger.info('文件未找到,配置文件已经重新生成!')
         except:
             try:
                 save_path = SaveUserConfig.default_config_path
@@ -92,6 +92,7 @@ class SaveUserConfig:
             except FileNotFoundError:
                 save_path = SaveUserConfig.temp_config_path
                 config = self.readConfig(save_path=save_path)
+            logger.info('读取配置文件发生致命性错误,配置文件已经重新生成!')
         finally:
             # 回调必须保证路径正确并且内容合法
             try:
@@ -102,7 +103,7 @@ class SaveUserConfig:
 
             # return exist_ok
 
-    def updateConfig(self, config_dict, pid=None,
+    def updateConfig(self, config_dict,
                      notice=None,
                      dtype=None,
                      start_with_windows=None,
@@ -111,8 +112,7 @@ class SaveUserConfig:
         compare_dict: dict = {
             "notice": notice,
             "type": dtype,
-            "startWithWindows": start_with_windows,
-            "pid": pid
+            "startWithWindows": start_with_windows
         }
         truth_table: list = []  # 创建真值表
         for k0name_v1value_0, k0name_v1value_1 in zip(config_dict.items(),
@@ -121,8 +121,6 @@ class SaveUserConfig:
                 truth_table.append(k0name_v1value_0[1] == k0name_v1value_1[1])
         if not all(truth_table):
             logger.info(f'更改前的配置:{config_dict}')
-            if pid is not None:
-                config_dict['pid'] = pid
             if notice is not None:
                 config_dict['notice'] = notice
             if dtype is not None:
@@ -146,11 +144,10 @@ class SaveUserConfig:
             if not os.path.exists(config_path):  # todo：如果是因为错误而程序发起的删除该判断可能导致问题
                 with open(config_path, 'w') as file:
                     json.dump(self.configTemplate(), file, indent=4)
-                logger.info('新模板创建成功')
+                logger.info('新模板创建成功!')
 
     def isConfigLegal(self, compare_dict: dict) -> bool:  # 是否合法 :传入需要匹配键的字典
         key_name = []  # 创建列表存储键名
-        # todo:加入try
         try:
             if isinstance(compare_dict, dict) and len(compare_dict) == self.key_num:
                 for k0v1compare, k0v1template in zip(compare_dict.items(), self.configTemplate().items()):
@@ -161,25 +158,6 @@ class SaveUserConfig:
                 return False
         except:
             return False
-
-
-"""
-class ImageView(QMainWindow):
-    def __init__(self, image: QIcon, title_icon: QIcon, parent=None):
-        super(ImageView, self).__init__(parent)
-        self.setWindowIcon(title_icon)
-        self.setWindowTitle(module.SOFTWARE_NAME)
-        self.label = QLabel(self)
-        screen_geometry = QGuiApplication.primaryScreen().availableGeometry()
-        w, h = screen_geometry.width(), screen_geometry.height()
-        self.resize(w * 1240 / 1920, h * 500 / 1080)
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
-
-        self.label.setPixmap(image)
-
-        self.show()
-        #parent.adjustSize()  # 调整窗口大小以适应图片大小
-"""
 
 
 class ImageView(QMainWindow):

@@ -84,7 +84,7 @@ class PowerEventListener:
                                                                 GUID(PowerEventListener.GUID_POWERSCHEME_PERSONALITY),
                                                                 DWORD(0))
         logger.success('注册电源设置更改通知成功!')
-        logger.info(f'结果: {hex(result)}')
+        logger.info(f'结果码(HRESULT):"{hex(result)}"')
 
         if result == 0:
             logger.error(f"注册电源设置通知时出错: {win32api.GetLastError()}")

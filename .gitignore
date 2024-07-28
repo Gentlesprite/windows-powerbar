@@ -6,3 +6,4 @@ build/
 *.spec
 Pipfile
 *.lock
+test.py

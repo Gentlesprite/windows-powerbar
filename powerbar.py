@@ -5,10 +5,9 @@
 # File:powerbar.py
 import os
 import sys
-import psutil
 import win32com.client
 from PySide6.QtGui import QIcon, QAction, QActionGroup
-from PySide6.QtCore import QThread, Signal, QTimer, QSize
+from PySide6.QtCore import QThread, Signal, QTimer, QSize, QSharedMemory
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 from winotify import Notification, audio
 import module
@@ -45,7 +44,7 @@ class PowerMenu(QMenu):
         self.voice_buttons = None
         self.power_buttons = None
         self.notice, self.dtype, self.start_with_windows = None, None, None
-        self.pid = os.getpid()
+        self.pid = app_pid
         self.power_cfg: dict = {}
         # 创建系统托盘图标和菜单
         self.icon = QSystemTrayIcon(QIcon(':powercfg.ico'), self)
@@ -61,11 +60,9 @@ class PowerMenu(QMenu):
         self.power_cfg: dict = CmdTask.getPowerConfig()  # 获取所有电源选项
         self.taskBarMenu()
         if self.loadConfig(only_check=True):  # 生成配置文件
-            logger.info(f'当前运行PID:{self.pid}')
+            logger.info(f'当前运行PID:{self.pid}。')
             self.loadConfig()
         self.thread.start()  # 启动获取电源改变循环
-        # ↓ ↓ ↓ 2.0 修复第一次初始化启动时重复执行问题 ↓ ↓ ↓
-        # self.updatePowerBoxState(CmdTask.getCurrentPlan(), force=True)
 
     def band(self):
         self.power_choice_actions.triggered.connect(self.updatePowerBoxState)
@@ -93,7 +90,6 @@ class PowerMenu(QMenu):
 
                         self.is_notice_button.setChecked(True)  # 那么勾选通知菜单
                         self.is_notice_button.setMenu(self.voice_menu)  # 设置为提示音菜单
-
                         # 存储提示音选项的k0类型v1控件地址
                         # 还需要k0控件地址 v1 键
                         # for k0name_v1address, in zip(self.voice_box.items(),AudioType): #name ,address
@@ -119,15 +115,13 @@ class PowerMenu(QMenu):
                     else:
                         self.start_with_windows = False
                         self.startup.setChecked(False)
-                    self.pid = os.getpid()
                     self.config.updateConfig(config_dict=self.config_content_dict,
                                              notice=self.notice,
                                              dtype=self.dtype,
-                                             start_with_windows=self.start_with_windows,
-                                             pid=self.pid
+                                             start_with_windows=self.start_with_windows
                                              )
                 except Exception as e:
-                    logger.error(f'错误:{e.with_traceback()}')
+                    logger.error(f'错误:{e.with_traceback()}。')
                     self.config.removeConfig()
 
     def taskBarMenu(self):  # 定义任务栏右边的图标
@@ -170,7 +164,6 @@ class PowerMenu(QMenu):
         self.icon.show()
 
     def startWithWindows(self):
-        # TODO:根据配置打沟
         if self.startup.isChecked():
             # 在用户的启动目录中创建快捷方式
             shell = win32com.client.Dispatch('WScript.Shell')
@@ -181,7 +174,7 @@ class PowerMenu(QMenu):
                                    title='设置开机自启') if self.is_notice_button.isChecked() else 0
             self.start_with_windows = True
             self.config.updateConfig(config_dict=self.config_content_dict, start_with_windows=self.start_with_windows)
-            logger.success('设置开机自启')
+            logger.success('设置开机自启。')
         else:
             try:
                 os.remove(PowerMenu.shortcut_path)
@@ -190,12 +183,11 @@ class PowerMenu(QMenu):
                 self.start_with_windows = False
                 self.config.updateConfig(config_dict=self.config_content_dict,
                                          start_with_windows=self.start_with_windows)
-                logger.success('取消开机自启')
+                logger.success('取消开机自启。')
             except:
                 self.powerChangeNotice(change_plan_content='未知错误',
                                        title='设置开机自启') if self.is_notice_button.isChecked() else 0
-                logger.error('未找到文件,可能已删除,取消开机自启失败')
-                # todo
+                logger.error('未找到文件,可能已删除,取消开机自启失败!')
 
     def islinkExists(self) -> bool:
         shortcut_path = PowerMenu.shortcut_path  # 获取快捷方式地址
@@ -207,9 +199,9 @@ class PowerMenu(QMenu):
                 res = PowerMenu.changeTargetPath(shortcut_path=shortcut_path,
                                                  new_target_path=actual_software_target)  # 重新更改目标地址以为现在的软件地址
                 if res:
-                    logger.warning(f'快捷方式目标地址与软件地址不一致 已自动更新为:{actual_software_target}')
+                    logger.warning(f'快捷方式目标地址与软件地址不一致,已自动更新为:{actual_software_target}。')
                 else:
-                    logger.error(f'快捷方式目标地址与软件地址不一致 更新失败 已删除快捷方式')
+                    logger.error(f'快捷方式目标地址与软件地址不一致,更新失败,已删除快捷方式!')
             return res  # 并返回True
         else:
             return False  # 不存在返回False
@@ -231,7 +223,7 @@ class PowerMenu(QMenu):
                 else:
                     self.start_with_windows = False
 
-        return self.pid, self.notice, self.dtype, self.start_with_windows
+        return self.notice, self.dtype, self.start_with_windows
 
     def updatePowerBoxState(self, data, force=False):
         inner = False
@@ -249,9 +241,8 @@ class PowerMenu(QMenu):
         current_guid = CmdTask.getCurrentPlan()[1]
         [i.setChecked(True) for i in self.power_choice_actions.actions() if force and i.text() == name]
         CmdTask.setPlan(name, guid) if guid != current_guid or force else 0
-        self.icon.setToolTip(f'当前电源方案:{name}')
+        self.icon.setToolTip(f'当前电源方案:{name}。')
         self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
-        # 缩减响应时间 v2.0-noad/v2.0 ↓ ↓ ↓
         if inner:
             QTimer().singleShot(200,
                                 lambda: self.thread.power_plan_changed.connect(self.updatePowerBoxState))
@@ -270,7 +261,7 @@ class PowerMenu(QMenu):
             self.config.updateConfig(config_dict=self.config_content_dict, dtype=self.dtype, notice=self.notice)
         else:
             name, self.dtype = data.data()
-            logger.debug(f'当前提示音:{name} 编号:{self.dtype}')
+            logger.debug(f'当前提示音:{name},编号:{self.dtype}。')
             if self.dtype == AudioType.Disabled.value:
                 self.notice = False
                 self.is_notice_button.setChecked(False)  # 那么勾选通知菜单
@@ -280,12 +271,12 @@ class PowerMenu(QMenu):
     def powerChangeNotice(self, change_plan_content, title=False):
         icon_path = PowerMenu.icon_path
         if not os.path.exists(icon_path):
-            logger.info(f'通知图标文件不存在,正在重新生成图标文件')
+            logger.info(f'通知图标文件不存在,正在重新生成图标文件!')
             icon = QIcon(':powercfg.png')
             pixmap_icon = icon.pixmap(QSize(256, 256))
             pixmap_icon.save(PowerMenu.icon_path)
-        toast = Notification(app_id="电源计划",
-                             title="电源计划调整" if not title else title,
+        toast = Notification(app_id="电源选项",
+                             title="电源选项调整" if not title else title,
                              msg=change_plan_content,
                              icon=icon_path,
                              duration='short')
@@ -300,13 +291,14 @@ class PowerMenu(QMenu):
         toast.show()
 
     def quit(self):
-        _pid, notice, dtype, startWithWindows = self.matchCurrentConfigFile()
-        pid = 0  # 正常退出的标识0
-        self.config.updateConfig(config_dict=self.config_content_dict, pid=pid, notice=notice, dtype=dtype,
+        notice, dtype, startWithWindows = self.matchCurrentConfigFile()
+        self.config.updateConfig(config_dict=self.config_content_dict, notice=notice, dtype=dtype,
                                  start_with_windows=startWithWindows)
         self.thread.stop()
+        # v2.0/v2.0-noad修复原本从配置文件读取的pid存在退出前篡改pid弊端
+        logger.success(f'程序退出,PID:{app_pid}。')
         try:
-            CmdTask.killPidToExit(_pid)
+            CmdTask.killPidToExit(app_pid)
         except Exception as e:
             logger.error(e)
             exit()
@@ -364,7 +356,7 @@ class PowerEventTimer(QThread, PowerEventListener):
         self.timer.stop()
         self.running = False
         self.quit()
-        logger.success('监听已退出')
+        logger.success('监听已退出。')
 
     def handle_power_setting_change(self, hwnd, msg, wparam, lparam):
         if msg == win32con.WM_POWERBROADCAST and wparam == PowerEventListener.PBT_POWERSETTINGCHANGE:
@@ -373,32 +365,20 @@ class PowerEventTimer(QThread, PowerEventListener):
             if power_setting == PowerEventListener.GUID_POWERSCHEME_PERSONALITY:
                 name, guid = CmdTask.getCurrentPlan()
                 self.power_plan_changed.emit((name, guid))
-                logger.info(f"电源方案调整为:{name} GUID:{guid}")
+                logger.info(f"电源方案调整为:{name},GUID:{guid}。")
 
 
-def run_menu():
-    app = QApplication(sys.argv)
-    app.setStyle("Universal")
-    menu = PowerMenu()
-    menu.show()
-    app.exec()
-    sys.exit(app.exec())
-
-
-if __name__ == '__main__':
-    suc = SaveUserConfig()
-    pid = suc.getConfig()[0].get('pid')
-    if pid == 0:
-        run_menu()
-        logger.success('通过初始化配置或者正常退出打开')
-    else:
-        # TODO:软件异常退出不保存pid=0时候会软件误判为多开导致打不开
-        pid_lst: list = psutil.pids()
-        if pid in pid_lst:
-            logger.success('软件已存在,不能多开')
-            logger.error(f'pid已经在:{pid}在列表{pid_lst.index(pid)}中')
-            CmdTask.startPwoerConfigPanel()
-        else:
-            run_menu()
-            logger.success('通过异常退出打开')
-            logger.info(f'pid:{pid}不在进程列表中')
+if __name__ == '__main__':  # v2.1/v2.1noad解决了异常退出时,误检测为多开而导致可能打不开的问题
+    # v2.1/v2.1noad解决启动时配置文件读取两次的问题
+    share = QSharedMemory('powerbar')
+    if share.attach():
+        logger.success('软件已存在,不能多开!')
+        CmdTask.startPwoerConfigPanel()
+    if share.create(1):
+        app = QApplication(sys.argv)
+        app_pid = app.applicationPid()
+        menu = PowerMenu()
+        menu.show()
+        logger.success('软件启动成功!')
+        app.exec()
+        sys.exit(app.exec())

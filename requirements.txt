@@ -1,7 +1,6 @@
 pyside6==6.4.2
 winotify
 loguru
-psutil
 pywin32
 comtypes
 pyinstaller
