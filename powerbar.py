@@ -369,8 +369,7 @@ if __name__ == '__main__':  # v2.1/v2.1noad解决了异常退出时,误检测为
     if share.create(1):
         app = QApplication(sys.argv)
         app_pid = app.applicationPid()
-        menu = PowerMenu()
-        menu.show()
+        menu = PowerMenu()  # v2.2/v2.2noad解决软件启动后左上角有一个白点的问题
         logger.success('软件启动成功!')
         app.exec()
         sys.exit(app.exec())

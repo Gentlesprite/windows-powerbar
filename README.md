@@ -7,7 +7,7 @@
 <p align="center">
 </p>
 <p align="center">
-  A file time changer tool on windows platform based on Python
+  A power plan changer tool on windows platform based on Python
 </p>
 <p align="center">
   <a style="text-decoration:none">
