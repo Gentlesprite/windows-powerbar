@@ -95,5 +95,3 @@ class PowerEventListener:
         logger.info('进入监听模式')
         while True:
             win32gui.PumpMessages()
-
-

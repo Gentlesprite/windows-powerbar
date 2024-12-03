@@ -241,7 +241,7 @@ class PowerMenu(QMenu):
         current_guid = CmdTask.getCurrentPlan()[1]
         [i.setChecked(True) for i in self.power_choice_actions.actions() if force and i.text() == name]
         CmdTask.setPlan(name, guid) if guid != current_guid or force else 0
-        self.icon.setToolTip(f'当前电源方案:{name}。')
+        self.icon.setToolTip(f'当前电源方案:{name}')
         self.powerChangeNotice(change_plan_content=name) if self.is_notice_button.isChecked() else None
         if inner:
             QTimer().singleShot(200,
@@ -377,8 +377,7 @@ if __name__ == '__main__':  # v2.1/v2.1noad解决了异常退出时,误检测为
     if share.create(1):
         app = QApplication(sys.argv)
         app_pid = app.applicationPid()
-        menu = PowerMenu()
-        menu.show()
+        menu = PowerMenu()  # v2.2/v2.2noad解决软件启动后左上角有一个白点的问题
         logger.success('软件启动成功!')
         app.exec()
         sys.exit(app.exec())

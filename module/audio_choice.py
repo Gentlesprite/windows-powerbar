@@ -5,6 +5,8 @@
 # File:audio_choice
 from enum import Enum
 from winotify import audio
+
+
 class AudioType(Enum):
     Default = 1
     IM = 2
@@ -51,5 +53,3 @@ class AudioType(Enum):
                                AudioType.Disabled: audio.Silent}
         # return (self, attribute_map[self])
         return {str(attribute_map[self]): self.value}
-
-
